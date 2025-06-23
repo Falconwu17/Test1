@@ -1,7 +1,7 @@
 package main
 
 import (
-	db_ "awesomeProject1/internal/db"
+	"awesomeProject1/internal/db"
 	"awesomeProject1/internal/handlers"
 	"awesomeProject1/internal/models"
 	"fmt"
@@ -9,7 +9,6 @@ import (
 )
 
 func main() {
-
 	handlers_.InitHandlers()
 	db_.InsertStudent(models.Student{Student_id: 1, Name: "Sagir", Age: 20, Curs: 4})
 

@@ -13,6 +13,7 @@ func InitHandlers() {
 			json.NewEncoder(w).Encode(students)
 		} else if r.Method == "POST" {
 			//В будущем что то да и сделаю
+
 		}
 	})
 }

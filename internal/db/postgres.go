@@ -1,21 +1,17 @@
 package db_
 
 import (
+	""
 	"awesomeProject1/internal/models"
-	"database/sql"
+	"awesomeProject1/variables"
 	_ "github.com/lib/pq"
 	"log"
 )
 
 func InsertStudent(student models.Student) {
-	db, err := sql.Open("postgres", "host=localhost user=postgres password=password dbname=students sslmode=disable")
-
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
+	db := variables.ConnectToDB()
 	defer db.Close()
-	_, err = db.Exec("Insert Into students (students_id, name,age,curs ) Values ($1, $2, $3, $4)",
+	_, err := db.Exec("Insert Into students (students_id, name,age,curs ) Values ($1, $2, $3, $4)",
 		student.Student_id, student.Name, student.Age, student.Curs)
 	if err != nil {
 		log.Fatal(err)
@@ -24,11 +20,7 @@ func InsertStudent(student models.Student) {
 }
 func SelectStudent() []models.Student {
 	students := []models.Student{}
-	db, err := sql.Open("postgres", "host=localhost user=postgres password=password dbname=students sslmode=disable")
-	if err != nil {
-		log.Fatal(err)
-		return students
-	}
+	db := variables.ConnectToDB()
 	defer db.Close()
 	rows, err := db.Query(`Select students_id, name, age, curs from students`)
 	if err != nil {
