@@ -2,12 +2,22 @@ package variables
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
+	"os"
 )
 
+var DB *sql.DB
+
 func ConnectToDB() *sql.DB {
-	db, err := sql.Open("postgres",
-		"host=localhost user=postgres password=password dbname=students sslmode=disable")
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s sslmode=disable",
+		os.Getenv("POSTGRES_HOST"),
+		os.Getenv("POSTGRES_USER"),
+		os.Getenv("POSTGRES_PASSWORD"),
+		os.Getenv("POSTGRES_DB"),
+	)
+
+	db, err := sql.Open("postgres", dsn)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -1,17 +1,23 @@
 package main
 
 import (
-	"awesomeProject1/internal/db"
 	"awesomeProject1/internal/handlers"
-	"awesomeProject1/internal/models"
+	"awesomeProject1/internal/handlers/api/entry"
+	"awesomeProject1/internal/handlers/api/records"
+	"awesomeProject1/internal/handlers/api/reports"
+	"awesomeProject1/internal/handlers/api/students"
 	"fmt"
 	"net/http"
 )
 
 func main() {
-	handlers_.InitHandlers()
-	db_.InsertStudent(models.Student{Student_id: 1, Name: "Sagir", Age: 20, Curs: 4})
+	handlers_.InitBaseRoutes()
+	students.InitRoutesStudents()
+	records.InitRoutesRecords()
+	entry.InitRoutesEntry()
+	reports.InitRoutesReport()
 
+	http.Handle("/", http.HandlerFunc(handlers_.ServeHTTP))
 	fmt.Println("Слушаю тебя на 8080")
 	http.ListenAndServe(":8080", nil)
 }

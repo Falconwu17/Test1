@@ -1,17 +1,11 @@
 #!/bin/bash
 
 docker compose down -v
-docker compose up -d
+docker compose up -d --build
 
-docker logs my_postgres
-
-echo ждем пока все наладиться
+echo "Ждём пока Postgres поднимется..."
 until docker exec my_postgres pg_isready -U postgres; do
     sleep 1
 done
 
-echo "Postgres поднят, ждём ещё 3 секунды , пока применится init.sql"
-sleep 3
-
-echo "Запуск Go"
-go run ./cmd/app
+echo "Готово. Всё поднялось!"

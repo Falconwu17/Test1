@@ -1,7 +1,6 @@
 package db_
 
 import (
-	""
 	"awesomeProject1/internal/models"
 	"awesomeProject1/variables"
 	_ "github.com/lib/pq"
