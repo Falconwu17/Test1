@@ -26,3 +26,7 @@ type Entry struct {
 	Data       json.RawMessage `json:"data"`
 	Created_at time.Time       `json:"created_at"`
 }
+type SmtpServer struct {
+	Host string
+	Port string
+}
