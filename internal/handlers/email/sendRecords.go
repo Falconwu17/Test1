@@ -17,8 +17,8 @@ func SendEmail() {
 	from := os.Getenv("EMAIL_FROM")
 	password := os.Getenv("EMAIL_PASSWORD")
 	to := []string{
-		"sag@gmail.com",
-		"twi@gmail.com",
+		"mukan@gmail.com",
+		"alex@yandex.ru",
 	}
 	smtpServer := models.SmtpServer{os.Getenv("EMAIL_HOST"), os.Getenv("EMAIL_PORT")}
 	var buf bytes.Buffer
