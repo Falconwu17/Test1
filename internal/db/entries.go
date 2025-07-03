@@ -7,7 +7,7 @@ import (
 )
 
 func InsertEntry(entry models.Entry) {
-	db := variables.ConnectToDB()
+	db := variables.DB
 	defer db.Close()
 	_, err := db.Exec("INSERT INTO entries (record_id, data, created_at) VALUES ($1, $2, $3)",
 		entry.Record_id, entry.Data, entry.Created_at)
@@ -18,7 +18,7 @@ func InsertEntry(entry models.Entry) {
 
 func SelectEntry() []models.Entry {
 	var entries []models.Entry
-	db := variables.ConnectToDB()
+	db := variables.DB
 	defer db.Close()
 	rows, err := db.Query("SELECT id ,Record_id, Data , Created_at FROM entries")
 	if err != nil {
@@ -37,7 +37,7 @@ func SelectEntry() []models.Entry {
 }
 func SelectEntryByRecordId(id int) (models.Entry, error) {
 	var entry models.Entry
-	db := variables.ConnectToDB()
+	db := variables.DB
 	defer db.Close()
 	row := db.QueryRow("Select id , Record_id, Data , Created_at FROM entries where Record_id = $1", id)
 	err := row.Scan(&entry.Id, &entry.Record_id, &entry.Data, &entry.Created_at)
@@ -47,7 +47,7 @@ func SelectEntryByRecordId(id int) (models.Entry, error) {
 	return entry, err
 }
 func DeleteEntryById(entry_id int) error {
-	db := variables.ConnectToDB()
+	db := variables.DB
 	defer db.Close()
 	_, err := db.Exec("DELETE FROM entries WHERE id = $1", entry_id)
 	if err != nil {

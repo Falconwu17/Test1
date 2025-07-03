@@ -3,19 +3,20 @@ package reports
 import (
 	db_ "awesomeProject1/internal/db"
 	"awesomeProject1/internal/models"
+	"encoding/json"
 	"gonum.org/v1/plot"
 	"gonum.org/v1/plot/plotter"
 	"gonum.org/v1/plot/plotutil"
 	"gonum.org/v1/plot/vg"
 	"log"
 	"net/http"
-	"strconv"
+	"os"
 )
 
 func GraphHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		const path = "graph.png"
-		if err := GraphForRecords(); err != nil {
+		if err := Graph(); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -24,23 +25,34 @@ func GraphHandler() http.HandlerFunc {
 	}
 }
 
-func GraphForRecords() error {
+func Graph() error {
+	const path = "graph.png"
+	_ = os.Remove(path)
+
 	p := plot.New()
-	p.Title.Text = "Timeout and Status Over Time"
-	p.X.Label.Text = "Time"
-	p.Y.Label.Text = "Status"
-	recordsTable := db_.SelectRecord()
-	pointsTime := pointsForTimeout(recordsTable)
-	pointsStatus := pointsForStatus(recordsTable)
+	p.Title.Text = "Данные Record и Entry по времени"
+	p.X.Label.Text = "Время"
+	p.Y.Label.Text = "Значение"
+	p.X.Tick.Marker = plot.TimeTicks{Format: "2006-01-02 15:04:05"}
+
+	recordsTable, err := db_.SelectRecord(100, 0)
+	if err != nil {
+		return err
+	}
+	entriesTable := db_.SelectEntry()
+	pointsRecord := pointsForRecords(recordsTable)
+	pointsEntry := pointsForEntry(entriesTable)
+
 	if err := plotutil.AddLinePoints(p,
-		"Time", pointsTime,
-		"Status", pointsStatus,
+		"Record", pointsRecord,
+		"Entry", pointsEntry,
 	); err != nil {
 		return err
 	}
-	return p.Save(4*vg.Inch, 4*vg.Inch, "graph.png")
+	return p.Save(8*vg.Inch, 5*vg.Inch, path)
 }
-func pointsForTimeout(recordsTable []models.Record) plotter.XYs {
+
+func pointsForRecords(recordsTable []models.Record) plotter.XYs {
 	pts := make(plotter.XYs, 0, len(recordsTable))
 	for _, record := range recordsTable {
 		pts = append(pts, plotter.XY{
@@ -51,17 +63,19 @@ func pointsForTimeout(recordsTable []models.Record) plotter.XYs {
 	return pts
 }
 
-func pointsForStatus(recordsTable []models.Record) plotter.XYs {
-	pts := make(plotter.XYs, 0, len(recordsTable))
-	for _, record := range recordsTable {
-		status, err := strconv.Atoi(record.Status)
-		if err != nil {
-			log.Println("status parse error:", err)
+func pointsForEntry(entriesTable []models.Entry) plotter.XYs {
+	pts := make(plotter.XYs, 0, len(entriesTable))
+	for _, entry := range entriesTable {
+		var payload struct {
+			Value float64 `json:"value"`
+		}
+		if err := json.Unmarshal(entry.Data, &payload); err != nil {
+			log.Println("entry.Data parse error:", err)
 			continue
 		}
 		pts = append(pts, plotter.XY{
-			X: float64(record.Created_at.Unix()),
-			Y: float64(status),
+			X: float64(entry.Created_at.Unix()),
+			Y: payload.Value,
 		})
 	}
 	return pts

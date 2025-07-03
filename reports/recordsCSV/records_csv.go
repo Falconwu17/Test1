@@ -13,7 +13,11 @@ func GenerateCSVRecords(w io.Writer) {
 	defer writer.Flush()
 	writer.Write([]string{"Record_id", "Timeout", "Handler_type", "Created_at", "Status"})
 	rows := [][]string{}
-	records := db_.SelectRecord()
+	records, err := db_.SelectRecord(100, 0)
+	if err != nil {
+		log.Printf("Ошибка при генерации CSV: %v", err)
+		return
+	}
 	for _, record := range records {
 		row := []string{}
 		recordID := strconv.Itoa(int(record.Record_id))

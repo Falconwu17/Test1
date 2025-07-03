@@ -5,6 +5,7 @@ import (
 	base "awesomeProject1/internal/handlers"
 	"awesomeProject1/internal/models"
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 )
@@ -14,35 +15,51 @@ func InitRoutesRecords() {
 	base.RegisterRoute(base.NewRoute("POST", "/records", create))
 	base.RegisterRoute(base.NewRoute("DELETE", "/records", delete))
 }
+
 func getAll(w http.ResponseWriter, r *http.Request) {
-	records := db_.SelectRecord()
+	records, err := db_.SelectRecord(100, 200)
+	if err != nil {
+		log.Printf("[ERROR] failed to select records: %v", err)
+		http.Error(w, "Failed to get records", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(records)
 }
+
 func create(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
-	records := models.Record{}
-	if err := json.NewDecoder(r.Body).Decode(&records); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	db_.InsertRecord(records)
-	if err := json.NewEncoder(w).Encode(records); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	record := models.Record{}
+	if err := json.NewDecoder(r.Body).Decode(&record); err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
 	}
 
+	if err := db_.InsertRecord(record); err != nil {
+		http.Error(w, "Failed to insert record", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(record)
 }
+
 func delete(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
 	recordID, err := strconv.Atoi(id)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
 		return
 	}
-	db_.DeleteRecordById(recordID)
-	if err := json.NewEncoder(w).Encode(map[string]string{"message": "record deleted"}); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+
+	if err := db_.DeleteRecordById(recordID); err != nil {
+		http.Error(w, "Failed to delete record", http.StatusInternalServerError)
+		return
 	}
+
 	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"message": "record deleted"})
 }

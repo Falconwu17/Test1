@@ -5,13 +5,6 @@ import (
 	"time"
 )
 
-type Student struct {
-	Student_id int    `json:"student_id"`
-	Name       string `json:"name"`
-	Age        int    `json:"age"`
-	Curs       int    `json:"curs"`
-}
-
 type Record struct {
 	Record_id    int       `json:"record_id"`
 	Timeout      int       `json:"timeout"`
