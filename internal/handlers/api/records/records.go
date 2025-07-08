@@ -4,7 +4,10 @@ import (
 	db_ "awesomeProject1/internal/db"
 	base "awesomeProject1/internal/handlers"
 	"awesomeProject1/internal/models"
+	"awesomeProject1/variables"
 	"encoding/json"
+	"fmt"
+	"github.com/go-playground/validator/v10"
 	"log"
 	"net/http"
 	"strconv"
@@ -17,7 +20,18 @@ func InitRoutesRecords() {
 }
 
 func getAll(w http.ResponseWriter, r *http.Request) {
-	records, err := db_.SelectRecord(100, 200)
+	limitStr := r.URL.Query().Get("limit")
+	offsetStr := r.URL.Query().Get("offset")
+	limit, err1 := strconv.Atoi(limitStr)
+	offset, err2 := strconv.Atoi(offsetStr)
+	if err1 != nil || limit <= 0 || limit > 100 {
+		limit = 100
+	}
+	if err2 != nil || offset < 0 {
+		offset = 0
+	}
+
+	records, err := db_.SelectRecord(limit, offset)
 	if err != nil {
 		log.Printf("[ERROR] failed to select records: %v", err)
 		http.Error(w, "Failed to get records", http.StatusInternalServerError)
@@ -28,11 +42,24 @@ func getAll(w http.ResponseWriter, r *http.Request) {
 }
 
 func create(w http.ResponseWriter, r *http.Request) {
+
 	defer r.Body.Close()
 
 	record := models.Record{}
+	if r.Header.Get("Content-Type") != "application/json" {
+		http.Error(w, "Expected application/json", http.StatusUnsupportedMediaType)
+		return
+	}
 	if err := json.NewDecoder(r.Body).Decode(&record); err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+	record.SetDefault()
+	validate := variables.Validator
+	err := validate.Struct(record)
+	if err != nil {
+		errors := err.(validator.ValidationErrors)
+		http.Error(w, fmt.Sprintf("Validation error: %s", errors), http.StatusBadRequest)
 		return
 	}
 
@@ -43,6 +70,7 @@ func create(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "application/json")
+
 	json.NewEncoder(w).Encode(record)
 }
 

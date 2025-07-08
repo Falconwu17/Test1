@@ -3,6 +3,8 @@ package variables
 import (
 	"database/sql"
 	"fmt"
+	"github.com/go-playground/validator/v10"
+	_ "github.com/lib/pq"
 	"log"
 	"os"
 )
@@ -21,4 +23,11 @@ func InitDB() {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+var Validator *validator.Validate
+
+func InitValidate() {
+	Validator = validator.New()
+	return
 }

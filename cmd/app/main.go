@@ -11,11 +11,12 @@ import (
 )
 
 func main() {
+	variables.InitDB()
+	variables.InitValidate()
 	handlers_.InitBaseRoutes()
 	records.InitRoutesRecords()
 	entry.InitRoutesEntry()
 	reports.InitRoutesReport()
-	variables.InitDB()
 
 	http.Handle("/", http.HandlerFunc(handlers_.ServeHTTP))
 	fmt.Println("Слушаю тебя на 8080")

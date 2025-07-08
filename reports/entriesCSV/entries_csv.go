@@ -8,11 +8,15 @@ import (
 	"strconv"
 )
 
-func GenerateCSVEntry(w io.Writer) {
+func GenerateCSVEntry(w io.Writer, limit, offset int) {
 	writer := csv.NewWriter(w)
 	defer writer.Flush()
 	writer.Write([]string{"Id", "Record_id", "Data", "Created_at"})
-	entries := db_.SelectEntry()
+	entries, err := db_.SelectEntry(limit, offset)
+	if err != nil {
+		log.Printf("Ошибка при получении entries: %v", err)
+		return
+	}
 	rows := [][]string{}
 	for _, entry := range entries {
 		row := []string{}
@@ -29,4 +33,5 @@ func GenerateCSVEntry(w io.Writer) {
 	if err := writer.WriteAll(rows); err != nil {
 		log.Fatalln("error writing csv:", err)
 	}
+	return
 }

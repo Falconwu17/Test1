@@ -22,7 +22,7 @@ func SendEmail() {
 	}
 	smtpServer := models.SmtpServer{os.Getenv("EMAIL_HOST"), os.Getenv("EMAIL_PORT")}
 	var buf bytes.Buffer
-	recordsCSV.GenerateCSVRecords(&buf)
+	recordsCSV.GenerateCSVRecords(&buf, 100, 0)
 	message := []byte("Subject: Report\r\n\r\n" + buf.String())
 
 	auth := smtp.PlainAuth("", from, password, smtpServer.Host)

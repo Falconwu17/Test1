@@ -37,9 +37,14 @@ func Graph() error {
 
 	recordsTable, err := db_.SelectRecord(100, 0)
 	if err != nil {
+		log.Println("Ошибка построение графики с лимитом", err)
 		return err
 	}
-	entriesTable := db_.SelectEntry()
+	entriesTable, err := db_.SelectEntry(100, 0)
+	if err != nil {
+		log.Println("Ошибка построение графики с лимитом", err)
+		return err
+	}
 	pointsRecord := pointsForRecords(recordsTable)
 	pointsEntry := pointsForEntry(entriesTable)
 
