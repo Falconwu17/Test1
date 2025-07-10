@@ -28,7 +28,6 @@ func GraphHandler() http.HandlerFunc {
 func Graph() error {
 	const path = "graph.png"
 	_ = os.Remove(path)
-
 	p := plot.New()
 	p.Title.Text = "Данные Record и Entry по времени"
 	p.X.Label.Text = "Время"

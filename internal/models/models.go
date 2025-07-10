@@ -22,6 +22,10 @@ type SmtpServer struct {
 	Host string
 	Port string
 }
+type SetDefault interface {
+	SetDefault()
+	SetDefaultEntry()
+}
 
 func (r *Record) SetDefault() {
 	if r.Record_id == 0 {
@@ -38,6 +42,9 @@ func (r *Record) SetDefault() {
 	}
 }
 func (r *Entry) SetDefaultEntry() {
+	if r.Id == 0 {
+		r.Id = 1
+	}
 	if r.Record_id == 0 {
 		r.Record_id = 1
 	}

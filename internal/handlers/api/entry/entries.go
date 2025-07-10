@@ -50,16 +50,17 @@ func create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if len(entries.Data) == 0 || string(entries.Data) == "null" {
-		w.WriteHeader(http.StatusNoContent)
-		return
+		defaultData, _ := json.Marshal(map[string]string{"key": "value"})
+		entries.Data = defaultData
 	}
+
 	entries.SetDefaultEntry()
 	validate := variables.Validator
 	err := validate.Struct(entries)
 	if err != nil {
 		errors := err.(validator.ValidationErrors)
 		http.Error(w, fmt.Sprintf("Validation error: %s", errors), http.StatusBadRequest)
-		returnlev
+		return
 	}
 	exists, err := db_.CheckRecordExists(entries.Record_id)
 	if err != nil {
