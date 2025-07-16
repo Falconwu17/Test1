@@ -1,6 +1,7 @@
 package entry
 
 import (
+	"awesomeProject1/Kafka"
 	db_ "awesomeProject1/internal/db"
 	base "awesomeProject1/internal/handlers"
 	"awesomeProject1/internal/models"
@@ -62,7 +63,7 @@ func create(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("Validation error: %s", errors), http.StatusBadRequest)
 		return
 	}
-	exists, err := db_.CheckRecordExists(entries.Record_id)
+	exists, err := db_.CheckRecordExists(entries.RecordId)
 	if err != nil {
 		http.Error(w, "DB error during record check", http.StatusInternalServerError)
 		return
@@ -71,15 +72,17 @@ func create(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Referenced record_id does not exist", http.StatusBadRequest)
 		return
 	}
-	if err := db_.InsertEntry(entries); err != nil {
+	if err := db_.InsertEntry(&entries); err != nil {
 		http.Error(w, "Failed to insert", http.StatusInternalServerError)
 		return
 	}
+	Kafka.SendEntryMessageKafka(entries)
 	w.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(w).Encode(entries); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
 }
 func delete(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")

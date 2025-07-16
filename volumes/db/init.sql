@@ -1,11 +1,11 @@
-CREATE TYPE record_status_type as ENUM ('Now', 'Later', 'Process');
+CREATE TYPE record_status_type as ENUM ('now', 'later', 'process');
 
 
 CREATE TABLE IF NOT EXISTS records (
     record_id SERIAL PRIMARY KEY ,
     timeout integer not null default 60 check (timeout > 0),
     created_at  timestamp not null DEFAULT CURRENT_TIMESTAMP,
-    status record_status_type not null default 'Now'
+    status record_status_type not null default 'now'
 );
 CREATE TABLE IF NOT EXISTS entries (
     id SERIAL PRIMARY KEY ,

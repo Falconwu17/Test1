@@ -1,6 +1,8 @@
 package main
 
 import (
+	"awesomeProject1/Kafka"
+	db_ "awesomeProject1/internal/db"
 	"awesomeProject1/internal/handlers"
 	"awesomeProject1/internal/handlers/api/entry"
 	"awesomeProject1/internal/handlers/api/records"
@@ -11,12 +13,14 @@ import (
 )
 
 func main() {
+	go Kafka.Consumer()
 	variables.InitDB()
 	variables.InitValidate()
 	handlers_.InitBaseRoutes()
 	records.InitRoutesRecords()
 	entry.InitRoutesEntry()
 	reports.InitRoutesReport()
+	db_.CheckRecord()
 
 	http.Handle("/", http.HandlerFunc(handlers_.ServeHTTP))
 	fmt.Println("Слушаю тебя на 8080")

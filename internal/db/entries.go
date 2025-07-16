@@ -6,18 +6,21 @@ import (
 	"log"
 )
 
-func InsertEntry(entry models.Entry) error {
+func InsertEntry(entry *models.Entry) error {
 	db := variables.DB
-	_, err := db.Exec("INSERT INTO entries (record_id, data, created_at) VALUES ($1, $2, $3)",
-		entry.Record_id, entry.Data, entry.Created_at)
+	err := db.QueryRow("INSERT INTO entries (record_id, data, created_at) VALUES ($1, $2, $3) RETURNING id",
+		entry.RecordId, entry.Data, entry.CreatedAt).Scan(&entry.Id)
 	if err != nil {
 		log.Printf("Ошибка при вставке записи: %v", err)
 	} else {
 		log.Printf("Record вставлен: %+v", entry)
 	}
-	return err
+	if entry.Id != 0 {
+		log.Printf("Попытка задать ID вручную: %+v", *entry)
+	}
+	log.Printf("Record вставлен: %+v", *entry)
+	return nil
 }
-
 func SelectEntry(limit, offset int) ([]models.Entry, error) {
 	var entries []models.Entry
 	db := variables.DB
@@ -29,7 +32,7 @@ func SelectEntry(limit, offset int) ([]models.Entry, error) {
 	defer rows.Close()
 	for rows.Next() {
 		var entry models.Entry
-		if err := rows.Scan(&entry.Id, &entry.Record_id, &entry.Data, &entry.Created_at); err != nil {
+		if err := rows.Scan(&entry.Id, &entry.RecordId, &entry.Data, &entry.CreatedAt); err != nil {
 			log.Printf("Ошибка сканирования записи: %v", err)
 			continue
 		}
@@ -45,21 +48,21 @@ func SelectEntry(limit, offset int) ([]models.Entry, error) {
 func SelectEntryByRecordId(id int) (models.Entry, error) {
 	var entry models.Entry
 	db := variables.DB
-	row := db.QueryRow("Select id , Record_id, Data , Created_at FROM entries where Record_id = $1", id)
-	err := row.Scan(&entry.Id, &entry.Record_id, &entry.Data, &entry.Created_at)
+	row := db.QueryRow("Select id , record_id, data , created_at FROM entries where record_id = $1", id)
+	err := row.Scan(&entry.Id, &entry.RecordId, &entry.Data, &entry.CreatedAt)
 	if err != nil {
 		log.Printf("Ошибка при получении записи: %v", err)
 	}
 	return entry, err
 }
-func DeleteEntryById(entry_id int) error {
+func DeleteEntryById(entryId int) error {
 	db := variables.DB
-	_, err := db.Exec("DELETE FROM entries WHERE id = $1", entry_id)
+	_, err := db.Exec("DELETE FROM entries WHERE id = $1", entryId)
 	if err != nil {
 		log.Printf(err.Error())
 	}
 	if err == nil {
-		log.Printf("Запись успешно удалена: ID = %v", entry_id)
+		log.Printf("Запись успешно удалена: ID = %v", entryId)
 	}
 	return err
 }

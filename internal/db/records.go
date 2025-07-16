@@ -3,21 +3,54 @@ package db_
 import (
 	"awesomeProject1/internal/models"
 	"awesomeProject1/variables"
+	"fmt"
 	"log"
+	"time"
 )
 
-func InsertRecord(record models.Record) error {
+func InsertRecord(record *models.Record) error {
 	db := variables.DB
-	_, err := db.Exec("INSERT INTO records ( Timeout, Created_at ,Status) VALUES ($1, $2, $3)",
-		record.Timeout, record.Created_at, record.Status)
+	err := db.QueryRow(
+		"INSERT INTO records (timeout, created_at, status) VALUES ($1, $2, $3) RETURNING record_id",
+		record.Timeout, record.CreatedAt, record.Status,
+	).Scan(&record.RecordId)
+
 	if err != nil {
 		log.Printf("Ошибка при вставке записи: %v", err)
-	} else {
-		log.Printf("Record вставлен: %+v", record)
+		return err
 	}
-	return err
+	if record.RecordId != 0 {
+		log.Printf("Попытка задать ID вручную: %+v", *record)
+	}
+	log.Printf("Record вставлен: %+v", *record)
+	return nil
 }
-
+func ensureDefaultRecord() error {
+	exists, err := CheckRecordExists(1)
+	if err != nil {
+		log.Printf("<UNK> <UNK> <UNK> <UNK>: %v", err)
+	}
+	if !exists {
+		r := models.Record{
+			Timeout:   60,
+			CreatedAt: time.Now(),
+			Status:    "now",
+		}
+		r.SetDefault()
+		err := InsertRecord(&r)
+		if err != nil {
+			return err
+		}
+		log.Println("Создан record_id=1 по умолчанию:")
+	}
+	return nil
+}
+func CheckRecord() error {
+	if err := ensureDefaultRecord(); err != nil {
+		fmt.Println("Ошибка при создании record 1:", err)
+	}
+	return ensureDefaultRecord()
+}
 func CheckRecordExists(id int) (bool, error) {
 	var exists bool
 	err := variables.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM records WHERE record_id = $1)", id).Scan(&exists)
@@ -41,7 +74,7 @@ func SelectRecord(limit, offset int) ([]models.Record, error) {
 
 	for rows.Next() {
 		var record models.Record
-		if err := rows.Scan(&record.Record_id, &record.Timeout, &record.Created_at, &record.Status); err != nil {
+		if err := rows.Scan(&record.RecordId, &record.Timeout, &record.CreatedAt, &record.Status); err != nil {
 			log.Printf("Ошибка сканирования записи: %v", err)
 			continue
 		}
@@ -53,24 +86,24 @@ func SelectRecord(limit, offset int) ([]models.Record, error) {
 	}
 	return records, nil
 }
-func SelectRecordById(record_id int) (models.Record, error) {
+func SelectRecordById(recordId int) (models.Record, error) {
 	db := variables.DB
 	var record models.Record
-	rows := db.QueryRow("SELECT record_id, timeout,  created_at, status FROM records WHERE Record_id = $1", record_id)
-	err := rows.Scan(&record.Record_id, &record.Timeout, &record.Created_at, &record.Status)
+	rows := db.QueryRow("SELECT record_id, timeout,  created_at, Status FROM records WHERE record_id= $1", recordId)
+	err := rows.Scan(&record.RecordId, &record.Timeout, &record.CreatedAt, &record.Status)
 	if err != nil {
 		log.Printf("Ошибка при получении записи: %v", err)
 	}
 	return record, err
 }
-func DeleteRecordById(record_id int) error {
+func DeleteRecordById(recordId int) error {
 	db := variables.DB
-	_, err := db.Exec("DELETE FROM records WHERE Record_id = $1", record_id)
+	_, err := db.Exec("DELETE FROM records WHERE record_id = $1", recordId)
 	if err != nil {
 		log.Printf(err.Error())
 	}
 	if err == nil {
-		log.Printf("Запись успешно удалена: ID = %v", record_id)
+		log.Printf("Запись успешно удалена: ID = %v", recordId)
 	}
 	return err
 }

@@ -33,12 +33,12 @@ func Graph(buf *bytes.Buffer) error {
 	p.Y.Label.Text = "Значение Value JSON"
 	p.X.Tick.Marker = plot.TimeTicks{Format: "2006-01-02 15:04:05"}
 
-	recordsTable, err := db_.SelectRecord(100, 0)
+	recordsTable, err := db_.SelectRecord(1000, 0)
 	if err != nil {
 		log.Println("Ошибка построение графики с лимитом", err)
 		return err
 	}
-	entriesTable, err := db_.SelectEntry(100, 0)
+	entriesTable, err := db_.SelectEntry(1000, 0)
 	if err != nil {
 		log.Println("Ошибка построение графики с лимитом", err)
 		return err
@@ -67,7 +67,7 @@ func pointsForRecords(recordsTable []models.Record) plotter.XYs {
 	pts := make(plotter.XYs, 0, len(recordsTable))
 	for _, record := range recordsTable {
 		pts = append(pts, plotter.XY{
-			X: float64(record.Created_at.Unix()),
+			X: float64(record.CreatedAt.Unix()),
 			Y: float64(record.Timeout),
 		})
 	}
@@ -89,7 +89,7 @@ func pointsForEntry(entriesTable []models.Entry) plotter.XYs {
 			continue
 		}
 		pts = append(pts, plotter.XY{
-			X: float64(entry.Created_at.Unix()),
+			X: float64(entry.CreatedAt.Unix()),
 			Y: payload.Value,
 		})
 	}

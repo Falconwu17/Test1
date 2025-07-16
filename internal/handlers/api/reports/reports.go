@@ -11,7 +11,7 @@ func InitRoutesReport() {
 	base.RegisterRoute(base.NewRoute("GET", "/reports/entries", getEntryReports))
 	base.RegisterRoute(base.NewRoute("GET", "/reports/records", getRecordReport))
 	base.RegisterRoute(base.NewRoute("GET", "/reports/records/graph", getRecordGraph))
-	base.RegisterRoute(base.NewRoute("GET", "/reports/send-mail", getRecordsMail))
+	base.RegisterRoute(base.NewRoute("POST", "/reports/send-mail", getRecordsMail))
 }
 func getRecordsMail(w http.ResponseWriter, r *http.Request) {
 	email.GetHandlerMail().ServeHTTP(w, r)

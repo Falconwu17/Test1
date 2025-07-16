@@ -11,7 +11,7 @@ import (
 func GenerateCSVRecords(w io.Writer, limit, offset int) error {
 	writer := csv.NewWriter(w)
 	defer writer.Flush()
-	writer.Write([]string{"Record_id", "Timeout", "Created_at", "Status"})
+	writer.Write([]string{"RecordId", "Timeout", "CreatedAt", "Status"})
 	rows := [][]string{}
 	records, err := db_.SelectRecord(limit, offset)
 	if err != nil {
@@ -20,9 +20,9 @@ func GenerateCSVRecords(w io.Writer, limit, offset int) error {
 	}
 	for _, record := range records {
 		row := []string{}
-		recordID := strconv.Itoa(int(record.Record_id))
+		recordID := strconv.Itoa(int(record.RecordId))
 		timeout := strconv.Itoa(int(record.Timeout))
-		createdAt := record.Created_at.String()
+		createdAt := record.CreatedAt.String()
 		status := record.Status
 		row = append(row, recordID)
 		row = append(row, timeout)

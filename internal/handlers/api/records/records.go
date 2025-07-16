@@ -11,6 +11,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 func InitRoutesRecords() {
@@ -55,6 +56,17 @@ func create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	record.SetDefault()
+	record.Status = strings.ToLower(record.Status)
+
+	validStatuses := map[string]bool{
+		"now":     true,
+		"later":   true,
+		"process": true,
+	}
+	if !validStatuses[record.Status] {
+		http.Error(w, "Invalid status value. Allowed: now, later, process", http.StatusBadRequest)
+		return
+	}
 	validate := variables.Validator
 	err := validate.Struct(record)
 	if err != nil {
@@ -62,8 +74,7 @@ func create(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("Validation error: %s", errors), http.StatusBadRequest)
 		return
 	}
-
-	if err := db_.InsertRecord(record); err != nil {
+	if err := db_.InsertRecord(&record); err != nil {
 		http.Error(w, "Failed to insert record", http.StatusInternalServerError)
 		return
 	}
