@@ -5,12 +5,21 @@ TOTAL=10000
 echo "Отправляем $TOTAL entry на $URL ..."
 
 for ((i=1; i<=TOTAL; i++)); do
-    val=$(echo "scale=5; 30 + 30 * s($i/100)" | bc -l | tr -d '\n')
+   val1=$(echo "scale=5; 30 + 30 * s($i/100)" | bc -l)
+   val2=$(echo "scale=5; 40 + 20 * c($i/120)" | bc -l)
 
-    json=$(jq -n \
-        --arg rid "1" \
-        --arg v "$val" \
-        '{record_id: ($rid | tonumber), data: {value: ($v | tonumber)}}')
+   json=$(jq -n \
+     --arg rid "1" \
+     --arg temp "$val1" \
+     --arg load "$val2" \
+     '{
+       record_id: ($rid | tonumber),
+       data: {
+         temperature: ($temp | tonumber),
+         loading: ($load | tonumber)
+       }
+     }')
+
 
     curl -s -X POST "$URL" \
          -H "Content-Type: application/json" \

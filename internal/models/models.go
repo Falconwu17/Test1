@@ -22,10 +22,21 @@ type SmtpServer struct {
 	Host string
 	Port string
 }
+
+func (s *SmtpServer) Address() string {
+	return s.Host + ":" + s.Port
+}
+
 type EmailRequest struct {
 	To      []string `json:"to"`
 	Subject string   `json:"subject"`
 	Body    string   `json:"body"`
+}
+type User struct {
+	id      int
+	name    string
+	surname string
+	email   string
 }
 
 func (r *Record) SetDefault() {

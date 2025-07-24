@@ -1,7 +1,6 @@
 package entry
 
 import (
-	"awesomeProject1/Kafka"
 	db_ "awesomeProject1/internal/db"
 	base "awesomeProject1/internal/handlers"
 	"awesomeProject1/internal/models"
@@ -54,7 +53,23 @@ func create(w http.ResponseWriter, r *http.Request) {
 		defaultData, _ := json.Marshal(map[string]string{"key": "value"})
 		entries.Data = defaultData
 	}
+	payload := map[string]float64{}
 
+	if err := json.Unmarshal(entries.Data, &payload); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	for key, value := range payload {
+		if key != "temperature" && key != "loading" {
+			http.Error(w, "Название должно быть 'temperature' или 'loading'", http.StatusBadRequest)
+			return
+		}
+
+		if value < 35 || value > 100 {
+			http.Error(w, fmt.Sprintf("Значение Value Должно быть числом от 35 до 100 , сейчас значение равно: %v", value), http.StatusBadRequest)
+			return
+		}
+	}
 	entries.SetDefaultEntry()
 	validate := variables.Validator
 	err := validate.Struct(entries)
@@ -76,7 +91,6 @@ func create(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to insert", http.StatusInternalServerError)
 		return
 	}
-	Kafka.SendEntryMessageKafka(entries)
 	w.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(w).Encode(entries); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)

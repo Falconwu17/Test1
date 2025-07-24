@@ -1,6 +1,5 @@
 CREATE TYPE record_status_type as ENUM ('now', 'later', 'process');
 
-
 CREATE TABLE IF NOT EXISTS records (
     record_id SERIAL PRIMARY KEY ,
     timeout integer not null default 60 check (timeout > 0),
@@ -13,3 +12,9 @@ CREATE TABLE IF NOT EXISTS entries (
     data jsonb not null ,
     created_at timestamp DEFAULT CURRENT_TIMESTAMP
     );
+CREATE TABLE IF NOT EXISTS user (
+    id SERIAL PRIMARY KEY ,
+    name VARCHAR(50) ,
+    surname varchar(50),
+    email varchar(50)
+)

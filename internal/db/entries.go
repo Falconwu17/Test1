@@ -18,6 +18,7 @@ func InsertEntry(entry *models.Entry) error {
 	if entry.Id != 0 {
 		log.Printf("Попытка задать ID вручную: %+v", *entry)
 	}
+	
 	log.Printf("Record вставлен: %+v", *entry)
 	return nil
 }
