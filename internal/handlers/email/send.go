@@ -21,9 +21,6 @@ func GetHandlerMail() http.HandlerFunc {
 		postMail(w, r)
 	}
 }
-func SmtpServerAddress(s models.SmtpServer) string {
-	return s.Host + ":" + s.Port
-}
 func postMail(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 	request := models.EmailRequest{}
@@ -39,6 +36,7 @@ func postMail(w http.ResponseWriter, r *http.Request) {
 	from := os.Getenv("EMAIL_FROM")
 	password := os.Getenv("EMAIL_PASSWORD")
 	smtpServer := models.SmtpServer{os.Getenv("EMAIL_HOST"), os.Getenv("EMAIL_PORT")}
+	smtpServer.Address()
 	var buf bytes.Buffer
 	recordsCSV.GenerateCSVRecords(&buf, 100, 0)
 	message := []byte("Subject: " + request.Subject + "\r\n\r\n" + request.Body + "\n\n" + buf.String())
@@ -50,7 +48,7 @@ func postMail(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	auth := smtp.PlainAuth("", from, password, smtpServer.Host)
-	if err := smtp.SendMail(SmtpServerAddress(smtpServer), auth, from, request.To, message); err != nil {
+	if err := smtp.SendMail(smtpServer.Address(), auth, from, request.To, message); err != nil {
 		http.Error(w, "Failed to send email: "+err.Error(), http.StatusInternalServerError)
 		return
 	}

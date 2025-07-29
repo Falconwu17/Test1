@@ -20,6 +20,8 @@ func Consumer() {
 	})
 	defer r.Close()
 	for {
+		fmt.Println("Kafka Consumer стартовал")
+		fmt.Printf("Подключение к брокеру: %s, топик: %s\n", brokers, os.Getenv("KAFKA_TOPIC_ENTRIES"))
 		m, err := r.ReadMessage(ctx)
 		if err != nil {
 			fmt.Println("Ошибка чтения сообщения из Kafka:", err)

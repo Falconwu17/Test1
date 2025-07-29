@@ -10,7 +10,6 @@ import (
 	"log"
 	"net/smtp"
 	"os"
-	"strings"
 	"time"
 )
 
@@ -22,7 +21,7 @@ func SendMessageInBase() {
 	smtpServer := models.SmtpServer{os.Getenv("EMAIL_HOST"), os.Getenv("EMAIL_PORT")}
 	var buf bytes.Buffer
 	recordsCSV.GenerateCSVRecords(&buf, 100, 0)
-	rows, err := db.Query("SELECT email FROM user")
+	rows, err := db.Query("SELECT email FROM users")
 	if err != nil {
 		log.Println("Ошибка при получении email:", err)
 		return
@@ -39,14 +38,14 @@ func SendMessageInBase() {
 		log.Println("Нет email для отправки")
 		return
 	}
-	message := []byte(fmt.Sprintf(
-		"From: %s\r\nTo: %s\r\nSubject: 🧾 Ежедневный отчёт по записям\r\nMIME-Version: 1.0\r\nContent-Type: text/plain; charset=\"utf-8\"\r\n\r\n%s",
-		from,
-		strings.Join(to, ", "),
-		buf.String(),
-	))
-
+	subject := "Ежедневный отчёт по записям"
+	body := buf.String()
+	message := []byte("Subject: " + subject + "\r\n\r\n" + body)
+	log.Printf("Отправляю с %s на %v", from, to)
+	log.Printf("Тело письма:\n%s", body)
 	auth := smtp.PlainAuth("", from, password, smtpServer.Host)
+	log.Printf("Отправка на: %v\n", to)
+	log.Printf("Тело письма: \n%s\n", buf.String())
 	err = smtp.SendMail(smtpServer.Address(), auth, from, to, message)
 	if err != nil {
 		log.Println("Ошибка отправки письма:", err)
@@ -55,11 +54,13 @@ func SendMessageInBase() {
 	fmt.Println("Email Sent!")
 }
 func AutoSendMessage() {
-	ticker := time.NewTicker(5 * time.Minute)
+	log.Println("Автоматическая отправка стартовала")
+	ticker := time.NewTicker(24 * time.Minute)
 	go func() {
 		for {
 			select {
 			case <-ticker.C:
+				log.Println("Попытка отправки письма...")
 				SendMessageInBase()
 			}
 		}

@@ -33,10 +33,17 @@ type EmailRequest struct {
 	Body    string   `json:"body"`
 }
 type User struct {
-	id      int
-	name    string
-	surname string
-	email   string
+	Id      int
+	Name    string
+	Surname string
+	Email   string
+}
+type AutoCleanSetting struct {
+	ID              int       `json:"id"`
+	UserID          int       `json:"user_id"`
+	Enabled         bool      `json:"enabled"`
+	IntervalSeconds int       `json:"interval_seconds"`
+	LastCleanedAt   time.Time `json:"last_cleaned_at"`
 }
 
 func (r *Record) SetDefault() {
