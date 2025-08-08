@@ -3,7 +3,9 @@ package db_
 import (
 	"awesomeProject1/internal/models"
 	"awesomeProject1/variables"
+	"fmt"
 	"log"
+	"strings"
 )
 
 func GetSettingByUserID(userID int) (models.AutoCleanSetting, error) {
@@ -17,7 +19,7 @@ func GetSettingByUserID(userID int) (models.AutoCleanSetting, error) {
 
 func UpdateSetting(setting models.AutoCleanSetting) error {
 	db := variables.DB
-	_, err := db.Exec(`
+	res, err := db.Exec(`
 		UPDATE auto_clean_settings
 		SET enabled = $1,
 		    interval_seconds = $2,
@@ -27,11 +29,17 @@ func UpdateSetting(setting models.AutoCleanSetting) error {
 	)
 	if err != nil {
 		log.Printf("Ошибка при обновлении настройки: %v", err)
+		return err
+	}
+	rowsAffected, _ := res.RowsAffected()
+	if rowsAffected == 0 {
+		log.Printf("Настройка не найдена для user_id: %d", setting.UserID)
+		return fmt.Errorf("no setting found for user_id: %d", setting.UserID)
 	}
 	log.Printf("Настройка обновлена для user_id: %d", setting.UserID)
-
-	return err
+	return nil
 }
+
 func GetAllAutoCleanSettings() ([]models.AutoCleanSetting, error) {
 	var settings []models.AutoCleanSetting
 	db := variables.DB
@@ -62,12 +70,23 @@ func InsertSetting(setting *models.AutoCleanSetting) error {
 		 VALUES ($1, $2, $3, $4) RETURNING id`,
 		setting.UserID, setting.Enabled, setting.IntervalSeconds, setting.LastCleanedAt,
 	).Scan(&setting.ID)
-
 	if err != nil {
+		if strings.Contains(err.Error(), "unique") {
+			return fmt.Errorf("настройка уже существует для user_id %d", setting.UserID)
+		}
 		log.Printf("Ошибка при вставке auto_clean_setting: %v", err)
 		return err
 	}
 
 	log.Printf("Настройка очистки добавлена с ID: %d", setting.ID)
 	return nil
+}
+func CheckUserExists(id int) (bool, error) {
+	var exists bool
+	err := variables.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM users WHERE id = $1)", id).Scan(&exists)
+	if err != nil {
+		log.Printf("Ошибка при проверке entry: %v", err)
+		return false, err
+	}
+	return exists, nil
 }

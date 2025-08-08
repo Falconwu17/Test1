@@ -13,9 +13,10 @@ import (
 )
 
 func InitRoutesEntry() {
-	base.RegisterRoute(base.NewRoute("GET", "/entries", getAll))
+	base.RegisterProtectedRoute(base.NewRoute("GET", "/entries", getAll))
 	base.RegisterRoute(base.NewRoute("POST", "/entries", create))
-	base.RegisterRoute(base.NewRoute("DELETE", "/entries", delete))
+	base.RegisterProtectedRoute(base.NewRoute("DELETE", "/entries", delete))
+	base.RegisterProtectedRoute(base.NewRoute("PUT", "/entries", update))
 }
 
 func getAll(w http.ResponseWriter, r *http.Request) {
@@ -53,23 +54,7 @@ func create(w http.ResponseWriter, r *http.Request) {
 		defaultData, _ := json.Marshal(map[string]string{"key": "value"})
 		entries.Data = defaultData
 	}
-	payload := map[string]float64{}
 
-	if err := json.Unmarshal(entries.Data, &payload); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	for key, value := range payload {
-		if key != "temperature" && key != "loading" {
-			http.Error(w, "Название должно быть 'temperature' или 'loading'", http.StatusBadRequest)
-			return
-		}
-
-		if value < 35 || value > 100 {
-			http.Error(w, fmt.Sprintf("Значение Value Должно быть числом от 35 до 100 , сейчас значение равно: %v", value), http.StatusBadRequest)
-			return
-		}
-	}
 	entries.SetDefaultEntry()
 	validate := variables.Validator
 	err := validate.Struct(entries)
@@ -114,4 +99,64 @@ func delete(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"message": "entry deleted"})
+}
+func update(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
+	if r.Header.Get("Content-Type") != "application/json" {
+		http.Error(w, "Expected application/json", http.StatusUnsupportedMediaType)
+		return
+	}
+
+	var entry models.Entry
+	if err := json.NewDecoder(r.Body).Decode(&entry); err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	if entry.Id == 0 {
+		http.Error(w, "Missing or invalid entry ID", http.StatusBadRequest)
+		return
+	}
+
+	if len(entry.Data) == 0 || string(entry.Data) == "null" {
+		defaultData, _ := json.Marshal(map[string]string{"key": "value"})
+		entry.Data = defaultData
+	}
+
+	entry.SetDefaultEntry()
+
+	validate := variables.Validator
+	if err := validate.Struct(entry); err != nil {
+		errors := err.(validator.ValidationErrors)
+		http.Error(w, fmt.Sprintf("Validation error: %s", errors), http.StatusBadRequest)
+		return
+	}
+
+	exists, err := db_.CheckRecordExists(entry.RecordId)
+	if err != nil {
+		http.Error(w, "DB error during record check", http.StatusInternalServerError)
+		return
+	}
+	if !exists {
+		http.Error(w, "Referenced record_id does not exist", http.StatusBadRequest)
+		return
+	}
+	exist, err := db_.CheckEntryExists(entry.Id)
+	if err != nil {
+		http.Error(w, "DB error during entry check", http.StatusInternalServerError)
+		return
+	}
+	if !exist {
+		http.Error(w, "Entry not found", http.StatusNotFound)
+		return
+	}
+
+	if err := db_.UpdateEntry(&entry); err != nil {
+		http.Error(w, "Failed to update entry", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{"message": "entry updated"})
 }

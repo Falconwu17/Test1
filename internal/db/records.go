@@ -107,3 +107,11 @@ func DeleteRecordById(recordId int) error {
 	}
 	return err
 }
+func UpdateRecord(record *models.Record) error {
+	query := `UPDATE records SET timeout = $1, status = $2 WHERE record_id = $3`
+	_, err := variables.DB.Exec(query, record.Timeout, record.Status, record.RecordId)
+	if err != nil {
+		log.Printf("Ошибка при обновлении записи: %v", err)
+	}
+	return err
+}

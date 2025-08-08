@@ -4,6 +4,7 @@ import (
 	"awesomeProject1/Kafka"
 	db_ "awesomeProject1/internal/db"
 	"awesomeProject1/internal/handlers"
+	"awesomeProject1/internal/handlers/api/auth"
 	"awesomeProject1/internal/handlers/api/auto"
 	"awesomeProject1/internal/handlers/api/entry"
 	"awesomeProject1/internal/handlers/api/records"
@@ -24,6 +25,7 @@ func main() {
 	records.InitRoutesRecords()
 	entry.InitRoutesEntry()
 	reports.InitRoutesReport()
+	auth.InitAuth()
 	auto.InitAutoSetting()
 	db_.CheckRecord()
 

@@ -3,7 +3,8 @@ CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     name_ VARCHAR(50),
     surname VARCHAR(50),
-    email VARCHAR(50)
+    email VARCHAR(255) UNIQUE,
+    password VARCHAR(255) NOT NULL
 );
 CREATE TABLE IF NOT EXISTS records (
     record_id SERIAL PRIMARY KEY,
@@ -23,12 +24,12 @@ CREATE TABLE IF NOT EXISTS entries (
 
 CREATE TABLE auto_clean_settings (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    user_id INTEGER UNIQUE REFERENCES users(id) ON DELETE CASCADE  ,
     enabled BOOLEAN NOT NULL DEFAULT true,
     interval_seconds INTEGER NOT NULL DEFAULT 604800,
     last_cleaned_at TIMESTAMP DEFAULT NULL
 );
 
-INSERT INTO users (name_, surname, email)
-VALUES ('Sagir', 'Jusupov', 'sagir.jusupov2004@gmail.com')
+INSERT INTO users (name_, surname, email, password)
+VALUES ('Sagir', 'Jusupov', 'sagir.jusupov2004@gmail.com', '123456')
 ON CONFLICT DO NOTHING;

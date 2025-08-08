@@ -1,6 +1,7 @@
 package handlers_
 
 import (
+	"awesomeProject1/internal/middleware"
 	"net/http"
 )
 
@@ -18,6 +19,7 @@ func NewRoute(method string, path string, handler http.HandlerFunc) Route {
 func RegisterRoute(route Route) {
 	routes = append(routes, route)
 }
+
 func ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	found := false
 	for _, route := range routes {
@@ -36,4 +38,12 @@ func InitBaseRoutes() {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
 	}))
+}
+func RegisterProtectedRoute(route Route) {
+	secured := middleware.JWTMiddleware(route.Handler)
+	routes = append(routes, Route{
+		Method:  route.Method,
+		Path:    route.Path,
+		Handler: secured,
+	})
 }

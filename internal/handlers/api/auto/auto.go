@@ -3,17 +3,19 @@ package auto
 import (
 	db_ "awesomeProject1/internal/db"
 	base "awesomeProject1/internal/handlers"
+	"awesomeProject1/internal/middleware"
 	"awesomeProject1/internal/models"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 )
 
 func InitAutoSetting() {
-	base.RegisterRoute(base.NewRoute("GET", "/autoGet", getALL))
-	base.RegisterRoute(base.NewRoute("GET", "/autoGetByUser", getByUSerID))
-	base.RegisterRoute(base.NewRoute("POST", "/autoPOST", create))
-	base.RegisterRoute(base.NewRoute("PUT", "/autoUpdate", updateSetting))
+	base.RegisterProtectedRoute(base.NewRoute("GET", "/autoGet", getALL))
+	base.RegisterProtectedRoute(base.NewRoute("GET", "/autoGetByUser", getByUSerID))
+	base.RegisterProtectedRoute(base.NewRoute("POST", "/autoPOST", create))
+	base.RegisterProtectedRoute(base.NewRoute("PUT", "/autoUpdate", updateSetting))
 }
 func getALL(w http.ResponseWriter, r *http.Request) {
 	settings, err := db_.GetAllAutoCleanSettings()
@@ -30,7 +32,7 @@ func getALL(w http.ResponseWriter, r *http.Request) {
 	}
 }
 func getByUSerID(w http.ResponseWriter, r *http.Request) {
-	userID := 1
+	userID := middleware.GetUserID(r)
 	setting, err := db_.GetSettingByUserID(userID)
 	if err != nil {
 		http.Error(w, "Настройка не найдена", http.StatusNotFound)
@@ -41,20 +43,35 @@ func getByUSerID(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(setting)
 }
 func updateSetting(w http.ResponseWriter, r *http.Request) {
-	userID := 1
+	userID := middleware.GetUserID(r)
 	setting := models.AutoCleanSetting{}
 	if r.Header.Get("Content-Type") != "application/json" {
 		http.Error(w, "Expected application/json", http.StatusUnsupportedMediaType)
+		return
 	}
 	if err := json.NewDecoder(r.Body).Decode(&setting); err != nil {
 		http.Error(w, "Невалидный JSON", http.StatusBadRequest)
 		return
 	}
 	setting.UserID = userID
-	if er := db_.UpdateSetting(setting); er != nil {
-		http.Error(w, "Error update to db", http.StatusInternalServerError)
+	exists, err := db_.CheckUserExists(userID)
+	if err != nil {
+		http.Error(w, "DB error during record check", http.StatusInternalServerError)
 		return
 	}
+	if !exists {
+		http.Error(w, "Referenced record_id does not exist", http.StatusBadRequest)
+		return
+	}
+	if er := db_.UpdateSetting(setting); er != nil {
+		if er.Error() == fmt.Sprintf("no setting found for user_id: %d", setting.UserID) {
+			http.Error(w, er.Error(), http.StatusNotFound)
+		} else {
+			http.Error(w, "Ошибка при обновлении настройки", http.StatusInternalServerError)
+		}
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(setting); err != nil {
@@ -64,7 +81,7 @@ func updateSetting(w http.ResponseWriter, r *http.Request) {
 
 }
 func create(w http.ResponseWriter, r *http.Request) {
-	userID := 1
+	userID := middleware.GetUserID(r)
 	setting := models.AutoCleanSetting{}
 	if r.Header.Get("Content-Type") != "application/json" {
 		http.Error(w, "Expected application/json", http.StatusUnsupportedMediaType)

@@ -18,7 +18,7 @@ func InsertEntry(entry *models.Entry) error {
 	if entry.Id != 0 {
 		log.Printf("Попытка задать ID вручную: %+v", *entry)
 	}
-	
+
 	log.Printf("Record вставлен: %+v", *entry)
 	return nil
 }
@@ -66,4 +66,21 @@ func DeleteEntryById(entryId int) error {
 		log.Printf("Запись успешно удалена: ID = %v", entryId)
 	}
 	return err
+}
+func UpdateEntry(entry *models.Entry) error {
+	query := `UPDATE entries SET record_id = $1, data = $2 WHERE id = $3`
+	_, err := variables.DB.Exec(query, entry.RecordId, entry.Data, entry.Id)
+	if err != nil {
+		log.Printf("Ошибка при обновлении entry: %v", err)
+	}
+	return err
+}
+func CheckEntryExists(id int) (bool, error) {
+	var exists bool
+	err := variables.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM entries WHERE id = $1)", id).Scan(&exists)
+	if err != nil {
+		log.Printf("Ошибка при проверке entry: %v", err)
+		return false, err
+	}
+	return exists, nil
 }

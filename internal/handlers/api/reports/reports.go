@@ -3,25 +3,15 @@ package reports
 import (
 	base "awesomeProject1/internal/handlers"
 	"awesomeProject1/internal/handlers/email"
+	"awesomeProject1/pdfgen"
 	"awesomeProject1/reports"
-	"net/http"
 )
 
 func InitRoutesReport() {
-	base.RegisterRoute(base.NewRoute("GET", "/reports/entries", getEntryReports))
-	base.RegisterRoute(base.NewRoute("GET", "/reports/records", getRecordReport))
-	base.RegisterRoute(base.NewRoute("GET", "/reports/records/graph", getRecordGraph))
-	base.RegisterRoute(base.NewRoute("POST", "/reports/send-mail", getRecordsMail))
-}
-func getRecordsMail(w http.ResponseWriter, r *http.Request) {
-	email.GetHandlerMail().ServeHTTP(w, r)
-}
-func getRecordGraph(w http.ResponseWriter, r *http.Request) {
-	reports.GraphHandler()(w, r)
-}
-func getEntryReports(w http.ResponseWriter, r *http.Request) {
-	reports.CsvEntryHandler()(w, r)
-}
-func getRecordReport(w http.ResponseWriter, r *http.Request) {
-	reports.CsvRecordsHandler()(w, r)
+	base.RegisterProtectedRoute(base.NewRoute("GET", "/reports/entries", reports.CsvEntryHandler()))
+	base.RegisterProtectedRoute(base.NewRoute("GET", "/reports/records", reports.CsvRecordsHandler()))
+	base.RegisterRoute(base.NewRoute("GET", "/reports/graph", reports.GraphHandler()))
+	base.RegisterProtectedRoute(base.NewRoute("POST", "/reports/send-mail", email.GetHandlerMail()))
+	base.RegisterProtectedRoute(base.NewRoute("GET", "/reports/pdf/record", pdfgen.PdfHandlerForRecord()))
+	base.RegisterProtectedRoute(base.NewRoute("GET", "/reports/pdf/entry", pdfgen.PdfHandlerForEntry()))
 }

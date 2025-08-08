@@ -5,10 +5,16 @@ import (
 	"time"
 )
 
+type TableSpec struct {
+	Title  string     `json:"title"`
+	Header []string   `json:"header"`
+	Width  []float64  `json:"width"`
+	Rows   [][]string `json:"rows"`
+}
 type Record struct {
 	RecordId  int       `json:"record_id"`
 	Timeout   int       `json:"timeout" validate:"required,min=1"`
-	CreatedAt time.Time `json:"created_at" validate:"required"`
+	CreatedAt time.Time `json:"created_at" `
 	Status    string    `json:"status" validate:"required,oneof=now later process"`
 }
 type Entry struct {
@@ -33,10 +39,11 @@ type EmailRequest struct {
 	Body    string   `json:"body"`
 }
 type User struct {
-	Id      int
-	Name    string
-	Surname string
-	Email   string
+	Id       int    `json:"id"`
+	Name     string `json:"name"`
+	Surname  string `json:"surname"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 type AutoCleanSetting struct {
 	ID              int       `json:"id"`

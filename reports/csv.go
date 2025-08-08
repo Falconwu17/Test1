@@ -3,35 +3,18 @@ package reports
 import (
 	"awesomeProject1/reports/entriesCSV"
 	"awesomeProject1/reports/recordsCSV"
-	"log"
+	"awesomeProject1/utils"
 	"net/http"
-	"strconv"
 )
 
 type CsvHandler interface {
 	http.Handler
 }
 
-func parseLimitOffset(r *http.Request) (limit, offset int) {
-	limitStr := r.URL.Query().Get("limit")
-	offsetStr := r.URL.Query().Get("offset")
-	limit, err := strconv.Atoi(limitStr)
-	if err != nil {
-		log.Printf("Error for limit in CSV: %v", err)
-	}
-	if err != nil || limit <= 0 || limit > 100 {
-		limit = 100
-	}
-	offset, err = strconv.Atoi(offsetStr)
-	if err != nil || offset < 0 {
-		offset = 0
-	}
-	return limit, offset
-}
 func withCSVHeaders(handler func(http.ResponseWriter, *http.Request, int, int)) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/csv")
-		limit, offset := parseLimitOffset(r)
+		limit, offset := utils.ParseLimitOffset(r)
 		handler(w, r, limit, offset)
 	}
 }

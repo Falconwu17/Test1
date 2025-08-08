@@ -19,6 +19,7 @@ func GraphHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		buf := new(bytes.Buffer)
 		if err := Graph(buf); err != nil {
+			log.Println("Ошибка при построении графика:", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -47,6 +48,7 @@ func Graph(buf *bytes.Buffer) error {
 		log.Println("Ошибка получения Entry:", err)
 		return err
 	}
+	log.Printf("Получены записи Entry: %v\n", entriesTable)
 
 	pointsRecord := interpolateXY(pointsForRecords(recordsTable), 10)
 

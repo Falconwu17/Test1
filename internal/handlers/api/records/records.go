@@ -15,9 +15,10 @@ import (
 )
 
 func InitRoutesRecords() {
-	base.RegisterRoute(base.NewRoute("GET", "/records", getAll))
-	base.RegisterRoute(base.NewRoute("POST", "/records", create))
-	base.RegisterRoute(base.NewRoute("DELETE", "/records", delete))
+	base.RegisterProtectedRoute(base.NewRoute("GET", "/records", getAll))
+	base.RegisterProtectedRoute(base.NewRoute("POST", "/records", create))
+	base.RegisterProtectedRoute(base.NewRoute("DELETE", "/records", delete))
+	base.RegisterProtectedRoute(base.NewRoute("PUT", "/records", update))
 }
 
 func getAll(w http.ResponseWriter, r *http.Request) {
@@ -101,4 +102,61 @@ func delete(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"message": "record deleted"})
+}
+func update(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
+	if r.Header.Get("Content-Type") != "application/json" {
+		http.Error(w, "Expected application/json", http.StatusUnsupportedMediaType)
+		return
+	}
+
+	var record models.Record
+	if err := json.NewDecoder(r.Body).Decode(&record); err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	if record.RecordId == 0 {
+		http.Error(w, "Missing or invalid record ID", http.StatusBadRequest)
+		return
+	}
+
+	record.Status = strings.ToLower(record.Status)
+
+	validStatuses := map[string]bool{
+		"now":     true,
+		"later":   true,
+		"process": true,
+	}
+	if !validStatuses[record.Status] {
+		http.Error(w, "Invalid status value. Allowed: now, later, process", http.StatusBadRequest)
+		return
+	}
+
+	validate := variables.Validator
+	if err := validate.Struct(record); err != nil {
+		errors := err.(validator.ValidationErrors)
+		http.Error(w, fmt.Sprintf("Validation error: %s", errors), http.StatusBadRequest)
+		return
+	}
+	exists, err := db_.CheckRecordExists(record.RecordId)
+	if err != nil {
+		http.Error(w, "DB error during record check", http.StatusInternalServerError)
+		return
+	}
+	if !exists {
+		http.Error(w, "Record not found", http.StatusNotFound)
+		return
+	}
+
+	if err := db_.UpdateRecord(&record); err != nil {
+		log.Printf("[ERROR] failed to update record: %v", err)
+		http.Error(w, "Failed to update record", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"message": "record updated"})
 }
